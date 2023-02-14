@@ -53,7 +53,7 @@ abstract contract FxERC721RootTunnel is FxBaseRootTunnel, Create2, IERC721Receiv
      * @notice Map a token to enable its movement via the PoS Portal, callable by anyone
      * @param rootToken address of token on root chain
      */
-    function mapToken(address rootToken) public {
+    function mapToken(address rootToken, string memory _baseURI) public {
         // check if token is already mapped
         require(rootToChildTokens[rootToken] == address(0x0), "FxERC721RootTunnel: ALREADY_MAPPED");
 
@@ -64,7 +64,7 @@ abstract contract FxERC721RootTunnel is FxBaseRootTunnel, Create2, IERC721Receiv
         
 
         // MAP_TOKEN, encode(rootToken, name, symbol)
-        bytes memory message = abi.encode(MAP_TOKEN, abi.encode(rootToken, name, symbol));
+        bytes memory message = abi.encode(MAP_TOKEN, abi.encode(rootToken, name, symbol, _baseURI));
         _sendMessageToChild(message);
 
         // compute child token address before deployment using create2
@@ -84,10 +84,7 @@ abstract contract FxERC721RootTunnel is FxBaseRootTunnel, Create2, IERC721Receiv
         uint256 tokenId,
         bytes memory data
     ) public {
-        // map token if not mapped
-        if (rootToChildTokens[rootToken] == address(0x0)) {
-            mapToken(rootToken);
-        }
+        require(rootToChildTokens[rootToken] != address(0x0), "FxERC721RootTunnel: !MAPPING");
 
         // transfer from depositor to this contract
         ERC721(rootToken).safeTransferFrom(
