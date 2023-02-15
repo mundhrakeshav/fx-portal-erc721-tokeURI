@@ -3,15 +3,16 @@ pragma solidity ^0.8.0;
 
 import {FxBaseChildTunnel} from "../../tunnel/FxBaseChildTunnel.sol";
 import {Create2} from "../../lib/Create2.sol";
-import {IFxERC20} from "../../tokens/IFxERC20.sol";
+import {IFxERC721} from "../../tokens/IFxERC721.sol";
+import {IERC721Receiver} from "../../lib/IERC721Receiver.sol";
 
 /**
- * @title FxERC20ChildTunnel
+ * @title FxERC721ChildTunnel
  */
-contract FxERC20ChildTunnel is FxBaseChildTunnel, Create2 {
+contract FxERC721ChildTunnelTokenURI is FxBaseChildTunnel, Create2, IERC721Receiver {
     bytes32 public constant DEPOSIT = keccak256("DEPOSIT");
     bytes32 public constant MAP_TOKEN = keccak256("MAP_TOKEN");
-    string public constant SUFFIX_NAME = " (FXERC20)";
+    string public constant SUFFIX_NAME = " (FXERC721)";
     string public constant PREFIX_SYMBOL = "fx";
 
     // event for token mapping
@@ -26,16 +27,30 @@ contract FxERC20ChildTunnel is FxBaseChildTunnel, Create2 {
         require(_isContract(_tokenTemplate), "Token template is not contract");
     }
 
-    function withdraw(address childToken, uint256 amount) public {
-        _withdraw(childToken, msg.sender, amount);
+    function onERC721Received(
+        address, /* operator */
+        address, /* from */
+        uint256, /* tokenId */
+        bytes calldata /* data */
+    ) external pure override returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
+    function withdraw(
+        address childToken,
+        uint256 tokenId,
+        bytes memory data
+    ) external {
+        _withdraw(childToken, msg.sender, tokenId, data);
     }
 
     function withdrawTo(
         address childToken,
         address receiver,
-        uint256 amount
-    ) public {
-        _withdraw(childToken, receiver, amount);
+        uint256 tokenId,
+        bytes memory data
+    ) external {
+        _withdraw(childToken, receiver, tokenId, data);
     }
 
     //
@@ -55,31 +70,28 @@ contract FxERC20ChildTunnel is FxBaseChildTunnel, Create2 {
         } else if (syncType == MAP_TOKEN) {
             _mapToken(syncData);
         } else {
-            revert("FxERC20ChildTunnel: INVALID_SYNC_TYPE");
+            revert("FxERC721ChildTunnel: INVALID_SYNC_TYPE");
         }
     }
 
     function _mapToken(bytes memory syncData) internal returns (address) {
-        (address rootToken, string memory name, string memory symbol, uint8 decimals) = abi.decode(
-            syncData,
-            (address, string, string, uint8)
-        );
+        (address rootToken, string memory name, string memory symbol, string memory baseURI) = abi.decode(syncData, (address, string, string, string));
 
         // get root to child token
         address childToken = rootToChildToken[rootToken];
 
         // check if it's already mapped
-        require(childToken == address(0x0), "FxERC20ChildTunnel: ALREADY_MAPPED");
+        require(childToken == address(0x0), "FxERC721ChildTunnel: ALREADY_MAPPED");
 
         // deploy new child token
         bytes32 salt = keccak256(abi.encodePacked(rootToken));
         childToken = createClone(salt, tokenTemplate);
-        IFxERC20(childToken).initialize(
+        IFxERC721(childToken).initialize(
             address(this),
             rootToken,
             string(abi.encodePacked(name, SUFFIX_NAME)),
             string(abi.encodePacked(PREFIX_SYMBOL, symbol)),
-            decimals
+            baseURI
         );
 
         // map the token
@@ -91,56 +103,40 @@ contract FxERC20ChildTunnel is FxBaseChildTunnel, Create2 {
     }
 
     function _syncDeposit(bytes memory syncData) internal {
-        (address rootToken, address depositor, address to, uint256 amount, bytes memory depositData) = abi.decode(
+        (address rootToken, address depositor, address to, uint256 tokenId, bytes memory depositData) = abi.decode(
             syncData,
             (address, address, address, uint256, bytes)
         );
         address childToken = rootToChildToken[rootToken];
 
         // deposit tokens
-        IFxERC20 childTokenContract = IFxERC20(childToken);
-        childTokenContract.mint(to, amount);
-
-        // call onTokenTransfer() on `to` with limit and ignore error
-        if (_isContract(to)) {
-            uint256 txGas = 2000000;
-            bool success = false;
-            bytes memory data = abi.encodeWithSignature(
-                "onTokenTransfer(address,address,address,address,uint256,bytes)",
-                rootToken,
-                childToken,
-                depositor,
-                to,
-                amount,
-                depositData
-            );
-            // solium-disable-next-line security/no-inline-assembly
-            assembly {
-                success := call(txGas, to, 0, add(data, 0x20), mload(data), 0, 0)
-            }
-        }
+        IFxERC721 childTokenContract = IFxERC721(childToken);
+        childTokenContract.mint(to, tokenId, depositData);
     }
 
     function _withdraw(
         address childToken,
         address receiver,
-        uint256 amount
+        uint256 tokenId,
+        bytes memory data
     ) internal {
-        IFxERC20 childTokenContract = IFxERC20(childToken);
+        IFxERC721 childTokenContract = IFxERC721(childToken);
         // child token contract will have root token
         address rootToken = childTokenContract.connectedToken();
 
         // validate root and child token mapping
         require(
             childToken != address(0x0) && rootToken != address(0x0) && childToken == rootToChildToken[rootToken],
-            "FxERC20ChildTunnel: NO_MAPPED_TOKEN"
+            "FxERC721ChildTunnel: NO_MAPPED_TOKEN"
         );
 
+        require(msg.sender == childTokenContract.ownerOf(tokenId));
+
         // withdraw tokens
-        childTokenContract.burn(msg.sender, amount);
+        childTokenContract.burn(tokenId);
 
         // send message to root regarding token burn
-        _sendMessageToRoot(abi.encode(rootToken, childToken, receiver, amount));
+        _sendMessageToRoot(abi.encode(rootToken, childToken, receiver, tokenId, data));
     }
 
     // check if address is contract

@@ -9,7 +9,7 @@ import {IERC721Receiver} from "../../lib/IERC721Receiver.sol";
 /**
  * @title FxERC721RootTunnel
  */
-contract FxERC721RootTunnel is FxBaseRootTunnel, Create2, IERC721Receiver {
+contract FxERC721RootTunnelTokenURI is FxBaseRootTunnel, Create2, IERC721Receiver {
     // maybe DEPOSIT and MAP_TOKEN can be reduced to bytes4
     bytes32 public constant DEPOSIT = keccak256("DEPOSIT");
     bytes32 public constant MAP_TOKEN = keccak256("MAP_TOKEN");
@@ -53,7 +53,7 @@ contract FxERC721RootTunnel is FxBaseRootTunnel, Create2, IERC721Receiver {
      * @notice Map a token to enable its movement via the PoS Portal, callable by anyone
      * @param rootToken address of token on root chain
      */
-    function mapToken(address rootToken) public {
+    function mapToken(address rootToken, string memory _baseURI) public {
         // check if token is already mapped
         require(rootToChildTokens[rootToken] == address(0x0), "FxERC721RootTunnel: ALREADY_MAPPED");
 
@@ -61,9 +61,10 @@ contract FxERC721RootTunnel is FxBaseRootTunnel, Create2, IERC721Receiver {
         ERC721 rootTokenContract = ERC721(rootToken);
         string memory name = rootTokenContract.name();
         string memory symbol = rootTokenContract.symbol();
+        
 
         // MAP_TOKEN, encode(rootToken, name, symbol)
-        bytes memory message = abi.encode(MAP_TOKEN, abi.encode(rootToken, name, symbol));
+        bytes memory message = abi.encode(MAP_TOKEN, abi.encode(rootToken, name, symbol, _baseURI));
         _sendMessageToChild(message);
 
         // compute child token address before deployment using create2
@@ -81,10 +82,7 @@ contract FxERC721RootTunnel is FxBaseRootTunnel, Create2, IERC721Receiver {
         uint256 tokenId,
         bytes memory data
     ) public {
-        // map token if not mapped
-        if (rootToChildTokens[rootToken] == address(0x0)) {
-            mapToken(rootToken);
-        }
+        require(rootToChildTokens[rootToken] != address(0x0), "FxERC721RootTunnel: !MAPPING");
 
         // transfer from depositor to this contract
         ERC721(rootToken).safeTransferFrom(

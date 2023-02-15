@@ -12,7 +12,8 @@ interface IFxERC721 is IERC721 {
         address _fxManager,
         address _connectedToken,
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        string memory _baseURI
     ) external;
 
     function mint(
