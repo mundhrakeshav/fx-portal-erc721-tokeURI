@@ -22,14 +22,14 @@ async function main() {
     await fxERC721.deployTransaction.wait();
     console.log("FxERC721 deployed to:", fxERC721.address);
 
-    
+
     //
     const FxERC721ChildTunnel = await hre.ethers.getContractFactory("FxERC721ChildTunnelTokenURI");
     const fxERC721ChildTunnelDeployTx = await FxERC721ChildTunnel.deploy(fxChild, fxERC721.address);
     await fxERC721ChildTunnelDeployTx.deployTransaction.wait();
-    
+
     console.log("ERC721ChildTunnel deployed to:", fxERC721ChildTunnelDeployTx.address);
-    
+
     setTimeout(() => {
         console.log("npx hardhat verify --network mumbai", fxERC721.address);
         shell.exec(`npx hardhat verify --network mumbai ${fxERC721.address}`)
@@ -40,10 +40,10 @@ async function main() {
             "npx hardhat verify --network mumbai",
             fxERC721ChildTunnelDeployTx.address,
             fxChild,
-            erc721Token
+            fxERC721.address
         );
 
-        shell.exec(`npx hardhat verify --network goerli ${fxERC721ChildTunnelDeployTx.address} ${fxChild} ${erc721Token}`)
+        shell.exec(`npx hardhat verify --network goerli ${fxERC721ChildTunnelDeployTx.address} ${fxChild} ${fxERC721.address}`)
     }, 100_000);
 
 }

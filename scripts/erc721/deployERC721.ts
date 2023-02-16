@@ -5,7 +5,7 @@ async function main() {
   const NAME = "ERC721Token";
   const SYMBOL = "NFT721";
   const ERC721Token: ERC721Token__factory = await ethers.getContractFactory("ERC721Token");
-  const erc721 = await ERC721Token.deploy("ERC721Token", "NFT721")
+  const erc721 = await ERC721Token.deploy("NFT721", "NFT721")
 
   await erc721.deployed();
   console.log(`ERC721 deployed at ${erc721.address}`);
@@ -17,7 +17,7 @@ async function main() {
         SYMBOL
     );
 
-    shell.exec(`npx hardhat verify --network goerli ${NAME} ${SYMBOL}`)
+    shell.exec(`npx hardhat verify --network goerli ${erc721.address} ${NAME} ${SYMBOL}`)
 }, 100_000);
 }
 

@@ -2,7 +2,7 @@ import hre from "hardhat";
 import config from "./config"
 import shell from "shelljs"
 
-const fxERC721ChildTunnel = "0xA8ecE2B2A41333d9E4d3fd0b14d51cDdf2446a37";
+const fxERC721ChildTunnel = "0x11F518b1feDE446397681Deff3c216EA40D32E37";
 async function main() {
     let fxRoot: string,
         checkpointManager: string,
@@ -42,11 +42,6 @@ async function main() {
 
         shell.exec(`npx hardhat verify --network goerli ${fxERC721RootTunnelDeployTx.address} ${checkpointManager} ${fxRoot} ${fxERC721}`)
     }, 100_000);
-
-    const setERC721Child = await fxERC721RootTunnelDeployTx.setFxChildTunnel(fxERC721ChildTunnel);
-    console.log(setERC721Child.hash);
-    await setERC721Child.wait();
-    console.log("ERC721ChildTunnel set");
 
 }
 

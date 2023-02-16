@@ -74,6 +74,7 @@ contract FxERC721ChildTunnelTokenURI is FxBaseChildTunnel, Create2, IERC721Recei
         }
     }
 
+
     function _mapToken(bytes memory syncData) internal returns (address) {
         (address rootToken, string memory name, string memory symbol, string memory baseURI) = abi.decode(syncData, (address, string, string, string));
 
@@ -94,8 +95,8 @@ contract FxERC721ChildTunnelTokenURI is FxBaseChildTunnel, Create2, IERC721Recei
             baseURI
         );
 
-        // map the token
-        rootToChildToken[rootToken] = childToken;
+        // // map the token
+        // rootToChildToken[rootToken] = childToken;
         emit TokenMapped(rootToken, childToken);
 
         // return new child token

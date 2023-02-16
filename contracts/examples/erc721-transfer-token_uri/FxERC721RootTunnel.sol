@@ -53,7 +53,7 @@ contract FxERC721RootTunnelTokenURI is FxBaseRootTunnel, Create2, IERC721Receive
      * @notice Map a token to enable its movement via the PoS Portal, callable by anyone
      * @param rootToken address of token on root chain
      */
-    function mapToken(address rootToken, string memory _baseURI) public {
+    function mapToken(address rootToken, string memory baseURI) public {
         // check if token is already mapped
         require(rootToChildTokens[rootToken] == address(0x0), "FxERC721RootTunnel: ALREADY_MAPPED");
 
@@ -63,8 +63,8 @@ contract FxERC721RootTunnelTokenURI is FxBaseRootTunnel, Create2, IERC721Receive
         string memory symbol = rootTokenContract.symbol();
         
 
-        // MAP_TOKEN, encode(rootToken, name, symbol)
-        bytes memory message = abi.encode(MAP_TOKEN, abi.encode(rootToken, name, symbol, _baseURI));
+        // MAP_TOKEN, encode(rootToken, name, symbol, URI)
+        bytes memory message = abi.encode(MAP_TOKEN, abi.encode(rootToken, name, symbol, baseURI));
         _sendMessageToChild(message);
 
         // compute child token address before deployment using create2
