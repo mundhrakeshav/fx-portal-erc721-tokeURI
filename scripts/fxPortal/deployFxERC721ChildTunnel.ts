@@ -44,7 +44,7 @@ async function main() {
         );
 
         shell.exec(`npx hardhat verify --network goerli ${fxERC721ChildTunnelDeployTx.address} ${fxChild} ${fxERC721.address}`)
-    }, 100_000);
+    }, 50_000);
 
 }
 
