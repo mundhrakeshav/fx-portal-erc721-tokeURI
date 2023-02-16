@@ -19,7 +19,7 @@ export default {
         "address": "0xd26CD6ce2a1705C49610F951f232510532c6856D"
       },
       "fxERC721": {
-        "address": "0x467c9BA5DAB81C8975F7d8237ECe61918AA6e8fF"
+        "address": "0x467c9BA5DAB81C8975F7d8237ECe61918AA6e8fF" // TODO DEPLOY THIS WITH BASEURI FOR MAINNET
       },
       "fxMintableERC721": {
         "address": "0x51C2589Ec9E37B855046Eaf32e1C5EDa2FD6574C"
@@ -57,7 +57,7 @@ export default {
         "address": "0x6dd0F2215Ce78fED85BC5d48C8eA7199201f2F64"
       },
       "fxERC721": {
-        "address": "0xf2720927E048726267C0221ffA41A88528048726"
+        "address": "0xA94A1366070a1F19deD2efA09B40c3C2E71430B3" // 0xA94A1366070a1F19deD2efA09B40c3C2E71430B3
       },
       "fxMintableERC721": {
         "address": "0x86248f99CC4f03E2f01a11E99BbB742DF3a5F3c7"
